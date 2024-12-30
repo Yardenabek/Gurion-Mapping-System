@@ -1,6 +1,14 @@
 package bgu.spl.mics.application.services;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import bgu.spl.mics.MicroService;
+import bgu.spl.mics.application.objects.LiDarDataBase;
+import bgu.spl.mics.application.objects.LiDarWorkerTracker;
+import bgu.spl.mics.application.objects.TrackedObject;
+import bgu.spl.mics.application.messages.DetectObjectsEvent;
+import bgu.spl.mics.application.messages.TickBroadcast;
 
 /**
  * LiDarService is responsible for processing data from the LiDAR sensor and
@@ -11,17 +19,22 @@ import bgu.spl.mics.MicroService;
  * observations.
  */
 public class LiDarService extends MicroService {
-
+	private final LiDarWorkerTracker liDarTracker;
+	private int currentTick;
     /**
      * Constructor for LiDarService.
      *
      * @param liDarTracker The LiDAR tracker object that this service will use to process data.
      */
-    public LiDarService(LiDarTracker liDarTracker) {
-        super("Change_This_Name");
-        // TODO Implement this
-    }
+    public LiDarService(LiDarWorkerTracker liDarTracker) {
+        super("LidarService");
+        this.liDarTracker = liDarTracker;
+        this.currentTick = 0; // Initialize the tick counter    
+    ]
+   
 
+
+    
     /**
      * Initializes the LiDarService.
      * Registers the service to handle DetectObjectsEvents and TickBroadcasts,
@@ -29,6 +42,33 @@ public class LiDarService extends MicroService {
      */
     @Override
     protected void initialize() {
-        // TODO Implement this
+    	 // Subscribe to TickBroadcast to keep track of the current tick
+        subscribeBroadcast(TickBroadcast.class, tick -> {
+            currentTick = tick.getCurrentTick();
+            if (currentTick % liDarTracker.getFrequency() == 0 && liDarTracker.getStatus() == LiDarWorkerTracker.STATUS.UP) {
+                System.out.println(getName() + " is ready to process events at tick " + currentTick);
+            }
+        });
+
+        // Subscribe to DetectObjectsEvent to process detected objects
+        subscribeEvent(DetectObjectsEvent.class, detectEvent -> {
+            List<TrackedObject> trackedObjects = new ArrayList<>();
+            for (String objectId : detectEvent.getDetectedObjectIds()) {
+                // Retrieve the tracked object from the tracker
+                TrackedObject trackedObject = liDarTracker.getTrackedObjectById(objectId);
+                if (trackedObject != null) {
+                    trackedObjects.add(trackedObject);
+                }
+            }
+
+            // Send TrackedObjectsEvent to FusionSLAM if there are any tracked objects
+            if (!trackedObjects.isEmpty()) {
+                sendEvent(new TrackedObjectsEvent(trackedObjects));
+                trackedObjects.forEach(obj -> liDarTracker.addTrackedObject(obj)); // Update the tracker
+                System.out.println(getName() + " sent TrackedObjectsEvent with " + trackedObjects.size() + " objects.");
+            }
+            complete(detectEvent, true); // Mark the DetectObjectsEvent as completed
+        });
     }
 }
+    
