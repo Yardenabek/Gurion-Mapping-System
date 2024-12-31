@@ -1,14 +1,21 @@
 package bgu.spl.mics.application.services;
 
 import java.util.ArrayList;
+
 import java.util.List;
 
 import bgu.spl.mics.MicroService;
+import bgu.spl.mics.application.objects.DetectedObject;
 import bgu.spl.mics.application.objects.LiDarDataBase;
 import bgu.spl.mics.application.objects.LiDarWorkerTracker;
+import bgu.spl.mics.application.objects.STATUS;
+import bgu.spl.mics.application.objects.StampedDetectedObjects;
 import bgu.spl.mics.application.objects.TrackedObject;
+import bgu.spl.mics.application.messages.CrashedBroadcast;
 import bgu.spl.mics.application.messages.DetectObjectsEvent;
+import bgu.spl.mics.application.messages.TerminatedBroadcast;
 import bgu.spl.mics.application.messages.TickBroadcast;
+import bgu.spl.mics.application.messages.TrackedObjectsEvent;
 
 /**
  * LiDarService is responsible for processing data from the LiDAR sensor and
@@ -30,7 +37,7 @@ public class LiDarService extends MicroService {
         super("LidarService");
         this.liDarTracker = liDarTracker;
         this.currentTick = 0; // Initialize the tick counter    
-    ]
+    }
    
 
 
@@ -38,14 +45,14 @@ public class LiDarService extends MicroService {
     /**
      * Initializes the LiDarService.
      * Registers the service to handle DetectObjectsEvents and TickBroadcasts,
-     * and sets up the necessary callbacks for processing data.
+     * and sets up the necessary callback for processing data.
      */
     @Override
     protected void initialize() {
     	 // Subscribe to TickBroadcast to keep track of the current tick
         subscribeBroadcast(TickBroadcast.class, tick -> {
             currentTick = tick.getCurrentTick();
-            if (currentTick % liDarTracker.getFrequency() == 0 && liDarTracker.getStatus() == LiDarWorkerTracker.STATUS.UP) {
+            if (currentTick % liDarTracker.getFrequency() == 0 && liDarTracker.getStatus() == STATUS.UP) {
                 System.out.println(getName() + " is ready to process events at tick " + currentTick);
             }
         });
@@ -53,9 +60,9 @@ public class LiDarService extends MicroService {
         // Subscribe to DetectObjectsEvent to process detected objects
         subscribeEvent(DetectObjectsEvent.class, detectEvent -> {
             List<TrackedObject> trackedObjects = new ArrayList<>();
-            for (String objectId : detectEvent.getDetectedObjectIds()) {
+            for (DetectedObject object : detectEvent.getStampedDetectedObjects().getDetectedObjects()) {
                 // Retrieve the tracked object from the tracker
-                TrackedObject trackedObject = liDarTracker.getTrackedObjectById(objectId);
+                TrackedObject trackedObject = liDarTracker.getTrackedObjectById(object.getId(),object.getDescription());
                 if (trackedObject != null) {
                     trackedObjects.add(trackedObject);
                 }
@@ -67,7 +74,17 @@ public class LiDarService extends MicroService {
                 trackedObjects.forEach(obj -> liDarTracker.addTrackedObject(obj)); // Update the tracker
                 System.out.println(getName() + " sent TrackedObjectsEvent with " + trackedObjects.size() + " objects.");
             }
+            
+            //TODO:need to add the update for the statisticalFolder
+            
             complete(detectEvent, true); // Mark the DetectObjectsEvent as completed
+        });
+        subscribeBroadcast(TerminatedBroadcast.class,terminated->{
+        	//TODO:implement callback
+        });
+        
+        subscribeBroadcast(CrashedBroadcast.class,crashed->{
+        	//TODO:implement callback
         });
     }
 }

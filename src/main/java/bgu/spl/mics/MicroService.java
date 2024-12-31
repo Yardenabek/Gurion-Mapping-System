@@ -24,7 +24,7 @@ public abstract class MicroService implements Runnable {
 
     private boolean terminated = false;
     private final String name;
-    private final HashMap<Class<? extends Message>, Callback<?>> callbacks; // Callbacks for message handling
+    private final HashMap<Class<? extends Message>, Callback<?>> callbacks; // Callback for message handling
 
     /**
      * @param name the micro-service name (used mainly for debugging purposes -
@@ -162,7 +162,7 @@ public abstract class MicroService implements Runnable {
     public final void run() {
         initialize();
         while (!terminated) {
-            System.out.println("NOT IMPLEMENTED!!!"); //TODO: you should delete this line :)
+            //TODO:implement this.
         }
     }
 

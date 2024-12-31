@@ -33,14 +33,13 @@ public class LiDarDataBase {
         cloudPoints.add(stampedCloudPoints);
     }
     
-    public synchronized List<StampedCloudPoints> getStampedCloudPointsById(String id) {
-        List<StampedCloudPoints> result = new ArrayList<>();
+    public synchronized StampedCloudPoints getStampedCloudPointsById(String id) {
         for (StampedCloudPoints scp : cloudPoints) {
             if (scp.getId().equals(id)) {
-                result.add(scp);
+                return scp;
             }
         }
-        return result;
+        return null;
     }
     
     public synchronized StampedCloudPoints getStampedCloudPointsByIdAndTime(String id, int time) {

@@ -34,4 +34,12 @@ public class GPSIMU {
     public List<Pose> getPoseList(){
     	return PoseList;
     }
+    public Pose getPose(int tick) {
+    	for(Pose pose : PoseList) {
+    		if(pose.getTime() == tick) {
+    			return pose;
+    		}
+    	}
+    	return null;
+    }
 }

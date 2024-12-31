@@ -10,7 +10,7 @@ public class DetectObjectsEvent implements Event<Boolean>{
 	public DetectObjectsEvent(StampedDetectedObjects detectedObjects) {
 		this.detectedObjects = detectedObjects;
 	}
-	public StampedDetectedObjects getDetectedObjects() {
+	public StampedDetectedObjects getStampedDetectedObjects() {
 		return detectedObjects;
 	}
 }

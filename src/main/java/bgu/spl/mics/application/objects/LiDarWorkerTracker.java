@@ -35,5 +35,14 @@ public class LiDarWorkerTracker {
     public boolean addTrackedObject(TrackedObject object) {
     	return lastTrackedObjects.add(object);
     }
+	public TrackedObject getTrackedObjectById(String id,String description) {
+		synchronized (LiDarDataBase.getInstance("file path")) {
+			StampedCloudPoints scp = LiDarDataBase.getInstance("file path").getStampedCloudPointsById(id);
+			if(scp!=null) {
+				return new TrackedObject(scp.getId(),scp.getTime(),description,scp.getCloudPoints());
+			}
+			return null;
+        }
+	}
     
 }
