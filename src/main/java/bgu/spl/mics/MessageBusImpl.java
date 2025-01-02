@@ -57,10 +57,10 @@ public class MessageBusImpl implements MessageBus {
 
 	@Override
 	public <T> void complete(Event<T> e, T result) {
-		synchronized (lock) { // נועל כדי להגן על גישה למבנה הנתונים
-	        Future<T> future = (Future<T>) eventFutures.get(e); // מנסה למצוא את ה-Future שקשור לאירוע
+		synchronized (lock) { 
+	        Future<T> future = (Future<T>) eventFutures.get(e); 
 	        if (future != null) {
-	            future.resolve(result); // פותר את ה-Future עם התוצאה
+	            future.resolve(result);  
 	        }
 	    }
 	}

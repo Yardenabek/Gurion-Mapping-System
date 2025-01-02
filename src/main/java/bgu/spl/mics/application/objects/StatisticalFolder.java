@@ -1,11 +1,14 @@
 package bgu.spl.mics.application.objects;
 
+import bgu.spl.mics.MessageBusImpl;
+
 /**
  * Holds statistical information about the system's operation.
  * This class aggregates metrics such as the runtime of the system,
  * the number of objects detected and tracked, and the number of landmarks identified.
  */
 public class StatisticalFolder {
+	private static StatisticalFolder instance = null;
     private int systemRuntime;
     private int numDetectedObjects;
     private int numTrackedObjects;
@@ -16,7 +19,7 @@ public class StatisticalFolder {
     private final Object lockLandmarks;
 
     
-    public StatisticalFolder() {
+    private StatisticalFolder() {
     	this.systemRuntime = 0;
     	this.numDetectedObjects = 0;
     	this.numTrackedObjects = 0;
@@ -25,6 +28,12 @@ public class StatisticalFolder {
     	this.lockDetected = new Object();
     	this.lockTracked = new Object();
     	this.lockLandmarks = new Object();
+    }
+    public static StatisticalFolder getInstance() {
+    	 if (instance == null) {
+             instance = new StatisticalFolder();
+         }
+         return instance;
     }
     public int getsystemRuntime() {
     	synchronized(lockSystem) {

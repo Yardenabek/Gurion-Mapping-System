@@ -30,7 +30,7 @@ public class PoseService extends MicroService {
     @Override
     protected void initialize() {
         subscribeBroadcast(CrashedBroadcast.class,crashed->{
-        	//TODO:implement callback
+        	terminate();
         });
         
         subscribeBroadcast(TickBroadcast.class,tick->{

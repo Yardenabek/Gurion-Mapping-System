@@ -161,9 +161,30 @@ public abstract class MicroService implements Runnable {
     @Override
     public final void run() {
         initialize();
+        MessageBus messageBus = MessageBusImpl.getInstance();
+        messageBus.register(this);
         while (!terminated) {
-            //TODO:implement this.
+            try {
+                Message message = messageBus.awaitMessage(this);                         
+                @SuppressWarnings("unchecked")
+                Callback<Message> callback = (Callback<Message>) callbacks.get(message.getClass());
+
+                if (callback != null) {
+                    callback.call(message); 
+                } 
+                else {
+                    System.err.println("No callback registered for message type: " + message.getClass().getName());
+                }
+            } 
+        	catch (InterruptedException e) {
+        		System.err.println("MicroService " + getName() + " interrupted: " + e.getMessage());
+        		Thread.currentThread().interrupt(); 
+        	} 
+        	catch (ClassCastException e) {
+        		System.err.println("Callback type mismatch for message: " + e.getMessage());
+        	}
         }
+        messageBus.unregister(this);
     }
 
 }

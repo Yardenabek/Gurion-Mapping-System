@@ -1,6 +1,7 @@
 package bgu.spl.mics.application.services;
 
 import bgu.spl.mics.MicroService;
+import bgu.spl.mics.application.messages.TerminatedBroadcast;
 import bgu.spl.mics.application.messages.TickBroadcast;
 
 /**
@@ -30,19 +31,18 @@ public class TimeService extends MicroService {
      */
     @Override
     protected void initialize() {
-        // Create a new thread to manage ticks
-        new Thread(() -> {
-            while (currentTick < duration) {
-                currentTick++;
-                sendBroadcast(new TickBroadcast(currentTick)); // Send TickBroadcast
-                try {
-                    Thread.sleep(tickTime); // Wait for the next tick
-                } catch (InterruptedException e) {
+    	while (currentTick < duration) {
+    		currentTick++;
+            sendBroadcast(new TickBroadcast(currentTick)); // Send TickBroadcast
+            try {
+            	Thread.sleep(tickTime); // Wait for the next tick
+            } 
+            catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                     break;
-                }
             }
-            terminate(); // Terminate the TimeService after all ticks are sent
-        }).start();
+        }
+        terminate(); // Terminate the TimeService after all ticks are sent
+        sendBroadcast(new TerminatedBroadcast("Time service"));
     }
 }

@@ -15,8 +15,7 @@ import bgu.spl.mics.application.messages.DetectObjectsEvent;
  * the system's StatisticalFolder upon sending its observations.
  */
 public class CameraService extends MicroService {
-	private final Camera camera;
-	private final StatisticalFolder statistics;
+	private Camera camera;
     /**
      * Constructor for CameraService.
      *
@@ -25,7 +24,6 @@ public class CameraService extends MicroService {
     public CameraService(Camera camera) {
         super("CameraService");
         this.camera = camera;
-        this.statistics = new StatisticalFolder();
     }
 
     /**
@@ -42,21 +40,19 @@ public class CameraService extends MicroService {
                 // Get detected objects at the current tick and send events for each
                 camera.getObjectsList().forEach(detectedObject -> {
                     sendEvent(new DetectObjectsEvent(detectedObject)); // Send DetectObjectsEvent
-                    statistics.incrementDetectedObjects(); // Update statistics
+                    StatisticalFolder.getInstance().incrementDetectedObjects(); // Update statistics
                 });
             }
         });
 
         // Subscribe to TerminatedBroadcast to terminate the service if needed
         subscribeBroadcast(TerminatedBroadcast.class, terminated -> {
-            System.out.println(getName() + " received TerminatedBroadcast from: " + terminated.getSenderName());
-            terminate(); // Terminate the service
+            terminate();
         });
 
         // Subscribe to CrashedBroadcast to terminate the service in case of a crash
         subscribeBroadcast(CrashedBroadcast.class, crashed -> {
-            System.out.println(getName() + " received CrashedBroadcast from: " + crashed.getSenderName());
-            terminate(); // Terminate the service
+            terminate();
         });
     }
 }
