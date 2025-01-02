@@ -80,7 +80,7 @@ public class LiDarService extends MicroService {
             complete(detectEvent, true); // Mark the DetectObjectsEvent as completed
         });
         subscribeBroadcast(TerminatedBroadcast.class,terminated->{
-        	//TODO:implement callback
+        	terminate();
         });
         
         subscribeBroadcast(CrashedBroadcast.class,crashed->{
