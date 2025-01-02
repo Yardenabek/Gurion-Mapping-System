@@ -1,13 +1,19 @@
 package bgu.spl.mics.application.services;
 
+import java.util.List;
+
 import bgu.spl.mics.MicroService;
 import bgu.spl.mics.application.messages.CrashedBroadcast;
 import bgu.spl.mics.application.messages.PoseEvent;
 import bgu.spl.mics.application.messages.TerminatedBroadcast;
 import bgu.spl.mics.application.messages.TickBroadcast;
 import bgu.spl.mics.application.messages.TrackedObjectsEvent;
+import bgu.spl.mics.application.objects.CloudPoint;
 import bgu.spl.mics.application.objects.FusionSlam;
+import bgu.spl.mics.application.objects.LandMark;
+import bgu.spl.mics.application.objects.Pose;
 import bgu.spl.mics.application.objects.StatisticalFolder;
+import bgu.spl.mics.application.objects.TrackedObject;
 
 /**
  * FusionSlamService integrates data from multiple sensors to build and update
@@ -17,7 +23,7 @@ import bgu.spl.mics.application.objects.StatisticalFolder;
  * transforming and updating the map with new landmarks.
  */
 public class FusionSlamService extends MicroService {
-	private FusionSlam fuisionSlam;
+	private FusionSlam fusionSlam;
     /**
      * Constructor for FusionSlamService.
      *
@@ -25,7 +31,7 @@ public class FusionSlamService extends MicroService {
      */
     public FusionSlamService(FusionSlam fusionSlam) {
         super("FusionSlamService");
-        this.fuisionSlam = fusionSlam;
+        this.fusionSlam = fusionSlam;
     }
 
     /**
@@ -36,19 +42,35 @@ public class FusionSlamService extends MicroService {
     @Override
     protected void initialize() {
         subscribeEvent(TrackedObjectsEvent.class,trackedEvent -> {
-        	//TODO:implement callback
-        });
+        	 List<TrackedObject> trackedObjects = trackedEvent.getTrackedObjects();
+             
+             for (TrackedObject object : trackedObjects) {
+                 LandMark landmark = fusionSlam.getLandmark(object.getId());
+                 Pose currentPose = fusionSlam.getPoseAtTime(object.getTime());
+                
+                 List<CloudPoint> transformedPoints = fusionSlam.transformToGlobalFrame(object.getCoordinates(), currentPose);
+                 
+                 if (landmark == null) {
+                     
+                     fusionSlam.addLandMark(new LandMark(object.getId(), object.getDescription(), transformedPoints));
+                 } else {
+                     
+                     fusionSlam.updateLandmark(object.getId(), transformedPoints);
+                 }
+             }
+         });
+    
         subscribeEvent(PoseEvent.class,poseEvent -> {
-        	
+        	fusionSlam.addPose(poseEvent.getPose());
         });
         subscribeBroadcast(TickBroadcast.class,tick->{
-        	//TODO:implement callback
+        	fusionSlam.updateTick(tick.getCurrentTick());
         });
         subscribeBroadcast(TerminatedBroadcast.class,terminated->{
-        	//TODO:implement callback
+        	terminate();
         });
         subscribeBroadcast(CrashedBroadcast.class,crashed->{
-        	//TODO:implement callback
+        	terminate();
         });
 
 
