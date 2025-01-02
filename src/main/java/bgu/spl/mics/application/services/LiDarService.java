@@ -6,10 +6,9 @@ import java.util.List;
 
 import bgu.spl.mics.MicroService;
 import bgu.spl.mics.application.objects.DetectedObject;
-import bgu.spl.mics.application.objects.LiDarDataBase;
 import bgu.spl.mics.application.objects.LiDarWorkerTracker;
 import bgu.spl.mics.application.objects.STATUS;
-import bgu.spl.mics.application.objects.StampedDetectedObjects;
+import bgu.spl.mics.application.objects.StatisticalFolder;
 import bgu.spl.mics.application.objects.TrackedObject;
 import bgu.spl.mics.application.messages.CrashedBroadcast;
 import bgu.spl.mics.application.messages.DetectObjectsEvent;
@@ -71,11 +70,13 @@ public class LiDarService extends MicroService {
             // Send TrackedObjectsEvent to FusionSLAM if there are any tracked objects
             if (!trackedObjects.isEmpty()) {
                 sendEvent(new TrackedObjectsEvent(trackedObjects));
-                trackedObjects.forEach(obj -> liDarTracker.addTrackedObject(obj)); // Update the tracker
-                System.out.println(getName() + " sent TrackedObjectsEvent with " + trackedObjects.size() + " objects.");
+                trackedObjects.forEach(obj -> {
+                    liDarTracker.addTrackedObject(obj); // Update the tracker
+                    StatisticalFolder.getInstance().incrementTrackedObjects(); // Increment tracked objects count in StatisticalFolder
+                });
+
+               // System.out.println(getName() + " sent TrackedObjectsEvent with " + trackedObjects.size() + " objects.");
             }
-            
-            //TODO:need to add the update for the statisticalFolder
             
             complete(detectEvent, true); // Mark the DetectObjectsEvent as completed
         });
@@ -84,7 +85,7 @@ public class LiDarService extends MicroService {
         });
         
         subscribeBroadcast(CrashedBroadcast.class,crashed->{
-        	//TODO:implement callback
+        	terminate();
         });
     }
 }
