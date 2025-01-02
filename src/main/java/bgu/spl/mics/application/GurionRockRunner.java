@@ -1,5 +1,10 @@
 package bgu.spl.mics.application;
 
+import com.google.gson.Gson;
+import java.io.FileReader;
+
+import bgu.spl.mics.application.objects.*;
+
 /**
  * The main entry point for the GurionRock Pro Max Ultra Over 9000 simulation.
  * <p>
@@ -18,9 +23,17 @@ public class GurionRockRunner {
      */
     public static void main(String[] args) {
         System.out.println("Hello World!");
-
-        // TODO: Parse configuration file.
-        // TODO: Initialize system components and services.
+        // Parse configuration file.
+        Configuration configuration = new Configuration();
+        Gson gson = new Gson();
+        try (FileReader reader = new FileReader(args[0])) {
+            configuration = gson.fromJson(reader, Configuration.class);
+        } 
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+        // TODO:Initialize system components and services.
+      
         // TODO: Start the simulation.
     }
 }
