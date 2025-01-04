@@ -1,6 +1,10 @@
 package bgu.spl.mics.application.objects;
 
 import java.util.ArrayList;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import java.io.FileReader;
+import java.lang.reflect.Type;
 import java.util.List;
 
 /**
@@ -8,13 +12,21 @@ import java.util.List;
  * It provides access to cloud point data and other relevant information for tracked objects.
  */
 public class LiDarDataBase {
-	private final List<StampedCloudPoints> cloudPoints;
+	private List<StampedCloudPoints> cloudPoints;
 	private static LiDarDataBase instance = null;
 	private final String filePath;
 	
 	 private LiDarDataBase(String filePath) {
-		 this.cloudPoints = new ArrayList<>();
          this.filePath = filePath;
+         this.cloudPoints = new ArrayList<>();
+         Gson gson = new Gson();
+         try (FileReader reader = new FileReader(filePath)) {
+             Type listType = new TypeToken<List<StampedCloudPoints>>() {}.getType();
+             cloudPoints = gson.fromJson(reader, listType);
+         }
+         catch (Exception e) {
+             e.printStackTrace();
+         }
 	    }
     /**
      * Returns the singleton instance of LiDarDataBase.
