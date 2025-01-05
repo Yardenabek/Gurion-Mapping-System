@@ -41,14 +41,22 @@ public class CameraService extends MicroService {
         	//Search for ERROR object and send CrashedBroadcast
         	boolean errorFound = SDO.getDetectedObjects().stream()
                     .anyMatch(obj -> "ERROR".equals(obj.getId()));
-        	//update statistical folder
         	if(errorFound) {
         		sendBroadcast(new CrashedBroadcast("Camera_"+camera.getId(), "Camera detected an error."));
                 terminate();
+                return;
         	}
         	
+        	// Send DetectObjectsEvent for valid objects
+            DetectObjectsEvent event = new DetectObjectsEvent(SDO);
+            sendEvent(event);
+            
+        	//update statistical folder
+            SDO.getDetectedObjects().forEach(DetectedObject ->
+            StatisticalFolder.getInstance().incrementDetectedObjects());
+        	
         });
-        	/*trying second version
+        	/*old version
         	 * 
             // Check if the current tick matches the camera's frequency and the camera is operational
             if (tick.getCurrentTick() % camera.getFrequency() == 0 && camera.isUp()) {
