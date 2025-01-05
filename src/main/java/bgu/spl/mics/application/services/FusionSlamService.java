@@ -1,6 +1,13 @@
 package bgu.spl.mics.application.services;
 
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 import bgu.spl.mics.MicroService;
 import bgu.spl.mics.application.messages.CrashedBroadcast;
@@ -45,15 +52,17 @@ public class FusionSlamService extends MicroService {
         	 List<TrackedObject> trackedObjects = trackedEvent.getTrackedObjects();
              
              for (TrackedObject object : trackedObjects) {
+            	 StatisticalFolder.getInstance().incrementTrackedObjects();
                  LandMark landmark = fusionSlam.getLandmark(object.getId());
                  Pose currentPose = fusionSlam.getPoseAtTime(object.getTime());
                 
                  List<CloudPoint> transformedPoints = fusionSlam.transformToGlobalFrame(object.getCoordinates(), currentPose);
                  
                  if (landmark == null) {
-                     
+                     StatisticalFolder.getInstance().incrementLandmarks();
                      fusionSlam.addLandMark(new LandMark(object.getId(), object.getDescription(), transformedPoints));
-                 } else {
+                 } 
+                 else {
                      
                      fusionSlam.updateLandmark(object.getId(), transformedPoints);
                  }
@@ -64,15 +73,72 @@ public class FusionSlamService extends MicroService {
         	fusionSlam.addPose(poseEvent.getPose());
         });
         subscribeBroadcast(TickBroadcast.class,tick->{
+        	StatisticalFolder.getInstance().incrementSystemRuntime();
         	fusionSlam.updateTick(tick.getCurrentTick());
         });
         subscribeBroadcast(TerminatedBroadcast.class,terminated->{
+        	writeFinalResults(terminated.getSenderName());
         	terminate();
         });
         subscribeBroadcast(CrashedBroadcast.class,crashed->{
+        	writeErrorResults(crashed.getSenderName(),crashed.getReason());
         	terminate();
         });
 
 
     }
+    
+    private void writeFinalResults(String terminatedName) {
+        Map<String, Object> outputData = new HashMap<>();
+        outputData.put("Terminated by:", terminatedName);
+        // Statistics Section
+        Map<String, Integer> statistics = new HashMap<>();
+        statistics.put("systemRuntime", StatisticalFolder.getInstance().getsystemRuntime());
+        statistics.put("numDetectedObjects", StatisticalFolder.getInstance().getDetectedObjects());
+        statistics.put("numTrackedObjects", StatisticalFolder.getInstance().getTrackedObjects());
+        statistics.put("numLandmarks", StatisticalFolder.getInstance().getLandmarks());
+        outputData.put("statistics", statistics);
+
+        // World Map Section
+        List<LandMark> landmarks = fusionSlam.getLandMarks();
+        outputData.put("worldMap", landmarks);
+
+        // Convert to JSON and write to file
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        try (FileWriter writer = new FileWriter("output_file.json")) {
+            gson.toJson(outputData, writer);
+            System.out.println("Output file written successfully.");
+        } catch (IOException e) {
+            System.err.println("Error writing output file: " + e.getMessage());
+        }
+    }
+    private void writeErrorResults(String sendername, String reason) {
+        Map<String, Object> outputData = new HashMap<>();
+        //Error description and faulty sensor.
+        outputData.put("Error:", reason);
+        outputData.put("Faulty sensor:", sendername);
+        //TODO:include last frames from each camera and lidar worker.
+        
+        //poses section
+        List<Pose> poses = FusionSlam.getInstance().getPoses();
+        outputData.put("Poses", poses);
+        
+        // Statistics Section
+        Map<String, Integer> statistics = new HashMap<>();
+        statistics.put("systemRuntime", StatisticalFolder.getInstance().getsystemRuntime());
+        statistics.put("numDetectedObjects", StatisticalFolder.getInstance().getDetectedObjects());
+        statistics.put("numTrackedObjects", StatisticalFolder.getInstance().getTrackedObjects());
+        statistics.put("numLandmarks", StatisticalFolder.getInstance().getLandmarks());
+        outputData.put("statistics", statistics);
+        
+        // Convert to JSON and write to file
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        try (FileWriter writer = new FileWriter("output_file.json")) {
+            gson.toJson(outputData, writer);
+            System.out.println("Output file written successfully.");
+        } catch (IOException e) {
+            System.err.println("Error writing output file: " + e.getMessage());
+        }
+    }
+
 }

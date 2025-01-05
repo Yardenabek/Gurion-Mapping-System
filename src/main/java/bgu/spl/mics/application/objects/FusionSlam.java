@@ -23,7 +23,7 @@ public class FusionSlam {
     private static class FusionSlamHolder {
         private static final FusionSlam Instance = new FusionSlam();
     }
-    public FusionSlam getInstance() {
+    public static FusionSlam getInstance() {
     	return FusionSlamHolder.Instance;
     }
     public List<LandMark> getLandMarks(){

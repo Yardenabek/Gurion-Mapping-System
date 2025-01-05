@@ -1,8 +1,6 @@
 package bgu.spl.mics.application;
 
-import com.google.gson.Gson;
 
-import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,18 +29,59 @@ public class GurionRockRunner {
         Configuration configuration = ConfigurationParser.parseConfiguration(args[0]);
        
         // Initialize system components and services.
-        List<CameraService> CameraServices = new ArrayList<>();
-        List<LiDarService> LidarServices = new ArrayList<>();
+        List<Thread> ServiceThreads = new ArrayList<>();
         
         for(CameraConfig cameraconfig : configuration.getCameras().getCamerasConfigurations()) {
-        	Camera cam = ConfigurationParser.parseCameraData(configuration.getCameras().getCamera_datas_path(), cameraconfig.getCamera_key(), cameraconfig.getId(), cameraconfig.getFrequency());
-        	CameraServices.add(new CameraService(cam));
+        	Camera cam = ConfigurationParser.parseCameraData(
+        			configuration.getCameras().getCamera_datas_path(),
+        			cameraconfig.getCamera_key(), cameraconfig.getId(),
+        			cameraconfig.getFrequency());
+        	CameraService cameraservice = new CameraService(cam);
+        	Thread CameraThread = new Thread(cameraservice);
+        	ServiceThreads.add(CameraThread);
         }
+        
         for(LiDarConfig lidar : configuration.getLiDarWorkers().getLidarConfigurations()) {
-        	LidarServices.add(new LiDarService(new LiDarWorkerTracker(lidar.getId(),lidar.getFrequency(),configuration.getLiDarWorkers().getLidars_data_path())));
+        	LiDarWorkerTracker lidarworker = new LiDarWorkerTracker(
+        			lidar.getId(),
+        			lidar.getFrequency(),
+        			configuration.getLiDarWorkers().getLidars_data_path());
+        	LiDarService lidarservice = new LiDarService(lidarworker);
+        	Thread lidarthread = new Thread(lidarservice);
+        	ServiceThreads.add(lidarthread);
         }
-        PoseService poseService = new PoseService(new GPSIMU(0,ConfigurationParser.parsePoseData(configuration.getPoseJsonFile())));
-        TimeService timeService = new TimeService(configuration.getTickTime(),configuration.getDuration());
-        // TODO: Start the simulation.
+        
+        GPSIMU gpsimu = new GPSIMU(
+        		0,
+        		ConfigurationParser.parsePoseData(configuration.getPoseJsonFile()));
+        PoseService poseService = new PoseService(gpsimu);
+        Thread posethread = new Thread(poseService);
+        ServiceThreads.add(posethread);
+        
+        TimeService timeService = new TimeService(
+        		configuration.getTickTime(),
+        		configuration.getDuration());
+        Thread timethread = new Thread(timeService);
+        ServiceThreads.add(timethread);
+        
+        FusionSlam fusionSLAM = FusionSlam.getInstance();
+        FusionSlamService fusionSlamService = new FusionSlamService(fusionSLAM);
+        Thread fusionSlamThread = new Thread(fusionSlamService);
+        ServiceThreads.add(fusionSlamThread);
+        //Start the simulation.
+        
+        ServiceThreads.forEach(Thread::start);
+
+        // Wait for all threads to finish
+        for (Thread thread : ServiceThreads) {
+            try {
+                thread.join();
+            } catch (InterruptedException e) {
+                System.err.println("Simulation interrupted: " + e.getMessage());
+                Thread.currentThread().interrupt();
+            }
+        }
+        
+        System.out.println("Simulation complete."); 
     }
 }

@@ -60,7 +60,8 @@ public class LiDarService extends MicroService {
         subscribeEvent(DetectObjectsEvent.class, detectEvent -> {
             List<TrackedObject> trackedObjects = new ArrayList<>();
             for (DetectedObject object : detectEvent.getStampedDetectedObjects().getDetectedObjects()) {
-                // Retrieve the tracked object from the tracker
+                StatisticalFolder.getInstance().incrementDetectedObjects();
+            	// Retrieve the tracked object from the tracker
                 TrackedObject trackedObject = liDarTracker.getTrackedObjectById(object.getId(),object.getDescription());
                 if (trackedObject != null) {
                     trackedObjects.add(trackedObject);
