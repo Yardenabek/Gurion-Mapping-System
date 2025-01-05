@@ -47,4 +47,11 @@ public class Camera {
     public void activate() {
         isActive = true;
     }
+    public StampedDetectedObjects getDetectedObjectsForTick(int tick) {
+        int targetTick = tick + this.frequency;
+        return detectedObjectsList.stream()
+            .filter(obj -> obj.getTime() == targetTick)
+            .findFirst()
+            .orElse(null); // Return null if no matching objects found
+    }
 }

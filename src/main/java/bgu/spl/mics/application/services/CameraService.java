@@ -5,6 +5,7 @@ import bgu.spl.mics.application.messages.CrashedBroadcast;
 import bgu.spl.mics.application.messages.TerminatedBroadcast;
 import bgu.spl.mics.application.messages.TickBroadcast;
 import bgu.spl.mics.application.objects.Camera;
+import bgu.spl.mics.application.objects.StampedDetectedObjects;
 import bgu.spl.mics.application.objects.StatisticalFolder;
 import bgu.spl.mics.application.messages.DetectObjectsEvent;
 /**
@@ -35,6 +36,20 @@ public class CameraService extends MicroService {
     protected void initialize() {
     	 // Subscribe to TickBroadcast to send DetectObjectsEvents at the appropriate time
         subscribeBroadcast(TickBroadcast.class, tick -> {
+        	//Search for StampedDetectedObjects fit to tick
+        	StampedDetectedObjects SDO = camera.getDetectedObjectsForTick(tick.getCurrentTick());
+        	//Search for ERROR object and send CrashedBroadcast
+        	boolean errorFound = SDO.getDetectedObjects().stream()
+                    .anyMatch(obj -> "ERROR".equals(obj.getId()));
+        	//update statistical folder
+        	if(errorFound) {
+        		sendBroadcast(new CrashedBroadcast("Camera_"+camera.getId(), "Camera detected an error."));
+                terminate();
+        	}
+        	
+        });
+        	/*trying second version
+        	 * 
             // Check if the current tick matches the camera's frequency and the camera is operational
             if (tick.getCurrentTick() % camera.getFrequency() == 0 && camera.isUp()) {
                 // Get detected objects at the current tick and send events for each
@@ -44,7 +59,8 @@ public class CameraService extends MicroService {
                 });
             }
         });
-
+        	*/
+        
         // Subscribe to TerminatedBroadcast to terminate the service if needed
         subscribeBroadcast(TerminatedBroadcast.class, terminated -> {
             terminate();
