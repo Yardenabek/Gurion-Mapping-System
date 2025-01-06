@@ -38,11 +38,19 @@ public class LiDarWorkerTracker {
     public boolean addTrackedObject(TrackedObject object) {
     	return lastTrackedObjects.add(object);
     }
-	public TrackedObject getTrackedObjectById(String id,String description) {
+    public List<TrackedObject> getLastTrackedObjects(){
+    	return lastTrackedObjects;
+    }
+	public TrackedObject getTrackedObjectByIdAndTime(String id,int time,String description) {
 		synchronized (LiDarDataBase.getInstance(DataBasePath)) {
-			StampedCloudPoints scp = LiDarDataBase.getInstance(DataBasePath).getStampedCloudPointsById(id);
+			StampedCloudPoints scp = LiDarDataBase.getInstance(DataBasePath).getStampedCloudPointsByIdAndTime(id,time+frequency);
 			if(scp!=null) {
-				return new TrackedObject(scp.getId(),scp.getTime(),description,scp.getCloudPoints());
+				TrackedObject trackedobject = new TrackedObject(
+						scp.getId(),
+						scp.getTime(),
+						description,
+						scp.getCloudPoints());
+				return trackedobject;
 			}
 			return null;
         }

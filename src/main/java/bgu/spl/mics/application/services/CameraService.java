@@ -5,6 +5,7 @@ import bgu.spl.mics.application.messages.CrashedBroadcast;
 import bgu.spl.mics.application.messages.TerminatedBroadcast;
 import bgu.spl.mics.application.messages.TickBroadcast;
 import bgu.spl.mics.application.objects.Camera;
+import bgu.spl.mics.application.objects.DetectedObject;
 import bgu.spl.mics.application.objects.StampedDetectedObjects;
 import bgu.spl.mics.application.objects.StatisticalFolder;
 import bgu.spl.mics.application.messages.DetectObjectsEvent;
@@ -38,22 +39,20 @@ public class CameraService extends MicroService {
         subscribeBroadcast(TickBroadcast.class, tick -> {
         	//Search for StampedDetectedObjects fit to tick
         	StampedDetectedObjects SDO = camera.getDetectedObjectsForTick(tick.getCurrentTick());
-        	//Search for ERROR object and send CrashedBroadcast
-        	boolean errorFound = SDO.getDetectedObjects().stream()
-                    .anyMatch(obj -> "ERROR".equals(obj.getId()));
-        	if(errorFound) {
-        		sendBroadcast(new CrashedBroadcast("Camera_"+camera.getId(), "Camera detected an error."));
-                terminate();
-                return;
+        	if(SDO!= null) {
+		    	//Search for ERROR object and send CrashedBroadcast
+		    	for(DetectedObject obj : SDO.getDetectedObjects()) {
+		    		if(obj.getId().equals("ERROR")) {
+		    			sendBroadcast(new CrashedBroadcast("Camera_"+camera.getId(),obj.getDescription()));
+		    			terminate();
+		    			return; 
+		    		}
+		    		StatisticalFolder.getInstance().incrementDetectedObjects();//update statistical folder
+		    	}
+		    	// Send DetectObjectsEvent for valid objects
+		        DetectObjectsEvent event = new DetectObjectsEvent(SDO);
+		        sendEvent(event);//TODO:return future, what should we do with it?
         	}
-        	
-        	// Send DetectObjectsEvent for valid objects
-            DetectObjectsEvent event = new DetectObjectsEvent(SDO);
-            sendEvent(event);
-            
-        	//update statistical folder
-            SDO.getDetectedObjects().forEach(DetectedObject ->
-            StatisticalFolder.getInstance().incrementDetectedObjects());
         	
         });
         	/*old version
