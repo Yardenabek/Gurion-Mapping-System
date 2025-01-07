@@ -78,4 +78,25 @@ public class CameraService extends MicroService {
             terminate();
         });
     }
+    public void processTick(TickBroadcast tick) {
+        StampedDetectedObjects detectedObjects = camera.getDetectedObjectsForTick(tick.getCurrentTick());
+
+        if (detectedObjects != null) {
+            for (DetectedObject object : detectedObjects.getDetectedObjects()) {
+                // If an error object is detected, broadcast a crash and terminate
+                if (object.getId().equals("ERROR")) {
+                    sendBroadcast(new CrashedBroadcast("Camera_" + camera.getId(), object.getDescription()));
+                    terminate();
+                    return;
+                }
+            }
+
+            // Send a DetectObjectsEvent for valid objects
+            DetectObjectsEvent event = new DetectObjectsEvent(detectedObjects);
+            sendEvent(event);
+
+            // Update the statistics for detected objects
+            StatisticalFolder.getInstance().incrementDetectedObjects();
+        }
+    }
 }

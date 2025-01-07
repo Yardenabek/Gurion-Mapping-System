@@ -158,6 +158,11 @@ public class MessageBusImpl implements MessageBus {
 	        return queue.take();
 	    }
 	}
+	
+	 // Resets the singleton instance. Intended for testing purposes only.
+    public static synchronized void reset() {
+        instance = null;
+    }
 
 	
 
