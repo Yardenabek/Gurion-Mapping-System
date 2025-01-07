@@ -75,4 +75,10 @@ public class StatisticalFolder {
         	numLandmarks++;
     	}
     }
+	public synchronized void reset() {
+		 numDetectedObjects = 0;
+         numTrackedObjects = 0;
+         numLandmarks = 0;
+         systemRuntime = 0;		
+	}
 }

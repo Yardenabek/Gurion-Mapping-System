@@ -140,5 +140,23 @@ public class FusionSlamService extends MicroService {
             System.err.println("Error writing output file: " + e.getMessage());
         }
     }
+    public void processTrackedObjects(TrackedObjectsEvent event) {
+        List<TrackedObject> trackedObjects = event.getTrackedObjects();
+        for (TrackedObject object : trackedObjects) {
+            StatisticalFolder.getInstance().incrementTrackedObjects();
+            LandMark landmark = fusionSlam.getLandmark(object.getId());
+            Pose currentPose = fusionSlam.getPoseAtTime(object.getTime());
+            List<CloudPoint> transformedPoints = fusionSlam.transformToGlobalFrame(object.getCoordinates(), currentPose);
+
+            if (landmark == null) {
+                StatisticalFolder.getInstance().incrementLandmarks();
+                fusionSlam.addLandMark(new LandMark(object.getId(), object.getDescription(), transformedPoints));
+            } else {
+                fusionSlam.updateLandmark(object.getId(), transformedPoints);
+            }
+        }
+    }
+
+    
 
 }
