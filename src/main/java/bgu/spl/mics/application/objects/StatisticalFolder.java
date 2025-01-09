@@ -1,6 +1,5 @@
 package bgu.spl.mics.application.objects;
 
-import bgu.spl.mics.MessageBusImpl;
 
 /**
  * Holds statistical information about the system's operation.
