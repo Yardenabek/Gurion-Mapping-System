@@ -149,7 +149,6 @@ public class FusionSlamService extends MicroService {
             List<CloudPoint> transformedPoints = fusionSlam.transformToGlobalFrame(object.getCoordinates(), currentPose);
 
             if (landmark == null) {
-                StatisticalFolder.getInstance().incrementLandmarks();
                 fusionSlam.addLandMark(new LandMark(object.getId(), object.getDescription(), transformedPoints));
             } else {
                 fusionSlam.updateLandmark(object.getId(), transformedPoints);
