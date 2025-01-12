@@ -43,15 +43,37 @@ public class Camera {
     }
     public void deactivate() {
         isActive = false;
+        status = STATUS.DOWN; // Update the status to DOWN
     }
     public void activate() {
         isActive = true;
+        status = STATUS.UP; // Update the status to UP
+        System.out.println("Camera status set to DOWN.");
+
     }
     public StampedDetectedObjects getDetectedObjectsForTick(int tick) {
+        System.out.println("getDetectedObjectsForTick called for tick: " + tick);
         int targetTick = tick + this.frequency;
-        return detectedObjectsList.stream()
+        System.out.println("Target tick: " + targetTick);
+
+        // הדפסת כל האובייקטים ברשימה
+        for (StampedDetectedObjects obj : detectedObjectsList) {
+            System.out.println("Checking detected object with time: " + obj.getTime());
+        }
+
+        // ניסיון למצוא את האובייקט המתאים
+        StampedDetectedObjects result = detectedObjectsList.stream()
             .filter(obj -> obj.getTime() == targetTick)
             .findFirst()
-            .orElse(null); // Return null if no matching objects found
+            .orElse(null);
+
+        if (result == null) {
+            System.out.println("No matching detected objects for target tick: " + targetTick);
+        } else {
+            System.out.println("Found detected objects for target tick: " + targetTick);
+        }
+
+        return result;
     }
+
 }

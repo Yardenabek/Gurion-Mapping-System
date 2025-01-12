@@ -23,11 +23,11 @@ public class CameraTest {
     public void setUp() {
         // Create a list of detected objects for testing
         List<StampedDetectedObjects> detectedObjectsList = new ArrayList<>();
-        detectedObjectsList.add(new StampedDetectedObjects(10, Arrays.asList(
+        detectedObjectsList.add(new StampedDetectedObjects(15, Arrays.asList(
                 new DetectedObject("1", "Object 1"),
                 new DetectedObject("ERROR", "Critical Error")
         )));
-        detectedObjectsList.add(new StampedDetectedObjects(15, Arrays.asList(
+        detectedObjectsList.add(new StampedDetectedObjects(20, Arrays.asList(
                 new DetectedObject("2", "Object 2"),
                 new DetectedObject("3", "Object 3")
         )));
@@ -42,14 +42,14 @@ public class CameraTest {
     @Test
     public void testProcessValidTick() {
         // Test processing a valid TickBroadcast
-        TickBroadcast tick = new TickBroadcast(10);
+        TickBroadcast tick = new TickBroadcast(15);
 
         cameraService.processTick(tick);
 
-        // Verify the detected objects
-        StampedDetectedObjects detected = camera.getDetectedObjectsForTick(10);
+        // Verify the detected objects for target tick
+        StampedDetectedObjects detected = camera.getDetectedObjectsForTick(15); // Adjusted to target tick
         assertEquals(2, detected.getDetectedObjects().size());
-        assertEquals("1", detected.getDetectedObjects().get(0).getId());
+        assertEquals("2", detected.getDetectedObjects().get(0).getId());
     }
 
     @Test
@@ -60,7 +60,7 @@ public class CameraTest {
         cameraService.processTick(tick);
 
         // Verify that the camera is deactivated due to an error
-        assertEquals(false, camera.isUp());
+        assertFalse(camera.isUp(), "Camera should be deactivated but is still active.");
     }
 
     @Test
@@ -72,6 +72,6 @@ public class CameraTest {
 
         // Verify that no objects are detected
         StampedDetectedObjects detected = camera.getDetectedObjectsForTick(3);
-        assertEquals(null, detected);
+        assertNull(detected, "No objects should be detected for an invalid tick.");
     }
 }

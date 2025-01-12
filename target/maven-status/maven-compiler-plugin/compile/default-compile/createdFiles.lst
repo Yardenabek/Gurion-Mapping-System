@@ -1,6 +1,3 @@
-<<<<<<< HEAD
-bgu\spl\mics\application\objects\FusionSlam$1.class
-=======
 bgu\spl\mics\application\messages\TickBroadcast.class
 bgu\spl\mics\application\messages\TerminatedBroadcast.class
 bgu\spl\mics\application\objects\Pose.class
@@ -53,4 +50,3 @@ bgu\spl\mics\application\services\LiDarService.class
 bgu\spl\mics\Broadcast.class
 bgu\spl\mics\application\objects\LandMark.class
 bgu\spl\mics\example\services\ExampleEventHandlerService.class
->>>>>>> branch 'main' of https://github.com/Yardenabek/Gurion-Mapping-System.git

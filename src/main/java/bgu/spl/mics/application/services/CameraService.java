@@ -43,6 +43,7 @@ public class CameraService extends MicroService {
 		    	//Search for ERROR object and send CrashedBroadcast
 		    	for(DetectedObject obj : SDO.getDetectedObjects()) {
 		    		if(obj.getId().equals("ERROR")) {
+		    			camera.deactivate(); // Deactivate the camera
 		    			sendBroadcast(new CrashedBroadcast("Camera_"+camera.getId(),obj.getDescription()));
 		    			terminate();
 		    			return; 
@@ -79,17 +80,30 @@ public class CameraService extends MicroService {
         });
     }
     public void processTick(TickBroadcast tick) {
+        System.out.println("processTick called for tick: " + tick.getCurrentTick());
+
+        // קבלת האובייקטים לפי הזמן הנוכחי
         StampedDetectedObjects detectedObjects = camera.getDetectedObjectsForTick(tick.getCurrentTick());
 
         if (detectedObjects != null) {
+            System.out.println("Detected objects found for tick: " + tick.getCurrentTick());
+
+            // מעבר על כל האובייקטים בזמנים המתאימים
             for (DetectedObject object : detectedObjects.getDetectedObjects()) {
-                // If an error object is detected, broadcast a crash and terminate
-                if (object.getId().equals("ERROR")) {
+                System.out.println("Checking object with ID: '" + object.getId() + "'");
+
+                // בדיקה האם ה-ID הוא ERROR
+                if (object.getId().trim().equals("ERROR")) { // שימוש ב-trim להסרת רווחים מיותרים
+                    System.out.println("ERROR object found! Deactivating camera...");
+                    camera.deactivate(); // השבתת המצלמה
                     sendBroadcast(new CrashedBroadcast("Camera_" + camera.getId(), object.getDescription()));
-                    terminate();
+                    terminate(); // הפסקת הפעולה
                     return;
                 }
             }
+        } else {
+            System.out.println("No detected objects found for tick: " + tick.getCurrentTick());
+        }
 
             // Send a DetectObjectsEvent for valid objects
             DetectObjectsEvent event = new DetectObjectsEvent(detectedObjects);
@@ -99,4 +113,4 @@ public class CameraService extends MicroService {
             StatisticalFolder.getInstance().incrementDetectedObjects();
         }
     }
-}
+
