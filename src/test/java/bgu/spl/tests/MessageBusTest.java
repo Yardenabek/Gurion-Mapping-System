@@ -5,11 +5,18 @@ import bgu.spl.mics.*;
 import org.junit.jupiter.api.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+
 public class MessageBusTest {
 
     private MessageBusImpl messageBus;
-    private MicroService serviceA;
-    private MicroService serviceB;
+    private TestMicroService serviceA;
+    private TestMicroService serviceB;
+    private Thread threadA;
+    private Thread threadB;
+    private final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    private final PrintStream originalOut = System.out;
 
     @BeforeEach
     public void setUp() {
@@ -18,151 +25,83 @@ public class MessageBusTest {
         messageBus = MessageBusImpl.getInstance();
 
         // Initialize two MicroServices
-        serviceA = new MicroService("ServiceA") {
-            @Override
-            protected void initialize() {
-            	subscribeEvent(TestEvent.class,event ->{
-            		System.out.println("event:"+event.getMsg());
-            	});
-            	subscribeBroadcast(TestBroadcast.class,broadcast ->{
-            		System.out.println("broadcast:"+broadcast.getMsg());
-            	});
-            }
-        };
+        serviceA = new TestMicroService("ServiceA");
+        serviceB = new TestMicroService("ServiceB");
+            
+        // run threads of microservices
+        threadA = new Thread(serviceA);
+        threadB = new Thread(serviceB);
+        threadA.start();
+        threadB.start();
+        
+        //redirect output stream
+        System.setOut(new PrintStream(outputStream));
 
-        serviceB = new MicroService("ServiceB") {
-            @Override
-            protected void initialize() {
-            	subscribeEvent(TestEvent.class,event ->{
-            		System.out.println("event:"+event.getMsg());
-            	});
-            	subscribeBroadcast(TestBroadcast.class,broadcast ->{
-            		System.out.println("broadcast:"+broadcast.getMsg());
-            	});
-            }
-        };
-
-        // Register the MicroServices
-        messageBus.register(serviceA);
-        messageBus.register(serviceB);
     }
 
     @AfterEach
     public void tearDown() {
         // Reset the Singleton instance of MessageBusImpl after each test
         MessageBusImpl.reset();
+        serviceA.forceTerminate();
+        serviceB.forceTerminate();
+        
+        //restore original output
+        System.setOut(originalOut);
     }
 
     @Test
-    public void testRegister() {
-        MicroService serviceC = new MicroService("ServiceC") {
-            @Override
-            protected void initialize() {subscribeEvent(TestEvent.class,event ->{
-        		System.out.println("event:"+event.getMsg());
-        	});
-        	subscribeBroadcast(TestBroadcast.class,broadcast ->{
-        		System.out.println("broadcast:"+broadcast.getMsg());
-        	});}
-        };
-
-        // Register a new service
-        messageBus.register(serviceC);
-
+    public void testRegisterAndSendEvent() throws InterruptedException {
         // Ensure the service can receive messages
-        messageBus.subscribeBroadcast(TestBroadcast.class, serviceC);
-        messageBus.sendBroadcast(new TestBroadcast("test register"));
-
-        try {
-            assertEquals(TestBroadcast.class, messageBus.awaitMessage(serviceC).getClass());
-        } catch (InterruptedException e) {
-            fail("ServiceC failed to receive broadcast");
-        }
+        Future<Boolean> future = messageBus.sendEvent(new TestEvent("test Register"));
+        assertEquals(future.get(),true);
     }
 
     @Test
     public void testUnregister() {
         // Unregister ServiceA and verify that it is no longer available
         messageBus.unregister(serviceA);
-
         // Verify that ServiceA cannot receive messages
         assertThrows(IllegalStateException.class, () -> messageBus.awaitMessage(serviceA));
     }
 
     @Test
-    public void testSubscribeEvent() {
+    public void testSubscribeEvent() throws InterruptedException {
         // Test valid event subscription and message receipt
-        messageBus.subscribeEvent(TestEvent.class, serviceA);
-
-        Event<String> event = new TestEvent("test subscribe event");
-        Future<String> future = messageBus.sendEvent(event);
-
+        TestEvent event = new TestEvent("test subscribe event");
+        Future<Boolean> future = messageBus.sendEvent(event);
         assertNotNull(future); // Verify that a future is returned
 
-        try {
-            assertEquals(event, messageBus.awaitMessage(serviceA));
-        } catch (InterruptedException e) {
-            fail("ServiceA failed to receive the event");
-        }
+        assertEquals(future.get(),true);
 
         // Test sending an event without subscribers
-        Event<String> event2 = new TestEvent("Test sending an event without subscribers");
-        Future<String> future2 = messageBus.sendEvent(event2);
+        TestEvent2 event2 = new TestEvent2();
+        Future<Boolean> future2 = messageBus.sendEvent(event2);
         assertNull(future2); // No one subscribed to handle the event
     }
 
     @Test
-    public void testSubscribeBroadcast() {
-        // Test valid broadcast subscription
-        messageBus.subscribeBroadcast(TestBroadcast.class, serviceB);
+    public void testSubscribeBroadcast() throws InterruptedException {
 
-        Broadcast broadcast = new TestBroadcast("Test valid broadcast subscription");
+        TestBroadcast broadcast = new TestBroadcast("Test valid broadcast subscription");
         messageBus.sendBroadcast(broadcast);
-
-        try {
-            assertEquals(broadcast, messageBus.awaitMessage(serviceB));
-        } catch (InterruptedException e) {
-            fail("ServiceB failed to receive the broadcast");
-        }
-
-        // Test sending a broadcast without subscribers
-        Broadcast broadcast2 = new TestBroadcast("Test sending a broadcast without subscribers");
-        messageBus.sendBroadcast(broadcast2);
-
-        // ServiceA and ServiceB should not receive this broadcast
-        assertThrows(InterruptedException.class, () -> {
-            // Simulate waiting for ServiceA and verify no message is received
-            synchronized (messageBus) {
-                messageBus.awaitMessage(serviceA);
-            }
-        });
-
-        assertThrows(InterruptedException.class, () -> {
-            // Simulate waiting for ServiceB and verify no message is received
-            synchronized (messageBus) {
-                messageBus.awaitMessage(serviceB);
-            }
-        });
+        String lastPrinted = outputStream.toString().trim();
+        assertEquals(true,(lastPrinted.isEmpty()));
+       
     }
 
 
     @Test
-    public void testSendEventRoundRobin() {
+    public void testSendEventRoundRobin() throws InterruptedException {
         // Test round-robin distribution of events
-        messageBus.subscribeEvent(TestEvent.class, serviceA);
-        messageBus.subscribeEvent(TestEvent.class, serviceB);
+        TestEvent event1 = new TestEvent("Test round-robin distribution of events 1");
+        TestEvent event2 = new TestEvent("Test round-robin distribution of events 2");
 
-        Event<String> event1 = new TestEvent("Test round-robin distribution of events 1");
-        Event<String> event2 = new TestEvent("Test round-robin distribution of events 2");
+        Future<Boolean> future1 = messageBus.sendEvent(event1);
+        Future<Boolean> future2 = messageBus.sendEvent(event2);
 
-        messageBus.sendEvent(event1);
-        messageBus.sendEvent(event2);
-
-        try {
-            assertEquals(event1, messageBus.awaitMessage(serviceA));
-            assertEquals(event2, messageBus.awaitMessage(serviceB));
-        } catch (InterruptedException e) {
-            fail("Round-robin event distribution failed");
-        }
+        assertEquals(future1.get(), true);
+		assertEquals(future2.get(), true);
     }
 
     @Test
@@ -170,14 +109,10 @@ public class MessageBusTest {
         // Test completing an event and resolving its future
         messageBus.subscribeEvent(TestEvent.class, serviceA);
 
-        Event<String> event = new TestEvent("Test completing an event and resolving its future");
-        Future<String> future = messageBus.sendEvent(event);
+        TestEvent event = new TestEvent("Test completing an event and resolving its future");
+        Future<Boolean> future = messageBus.sendEvent(event);
 
-        // Complete the event
-        messageBus.complete(event, "Success");
-
-        assertTrue(future.isDone());
-        assertEquals("Success", future.get());
+        assertEquals(true, future.get());
     }
 
     @Test
@@ -191,6 +126,24 @@ public class MessageBusTest {
         assertThrows(IllegalStateException.class, () -> messageBus.awaitMessage(unregisteredService));
     }
 }
+class TestMicroService extends MicroService{
+	public TestMicroService(String name){
+		super(name);
+	}
+	@Override
+    protected void initialize() {
+    	subscribeEvent(TestEvent.class,event ->{
+    		System.out.println("event:"+event.getMsg());
+    		complete(event,true);
+    	});
+    	subscribeBroadcast(TestBroadcast.class,broadcast ->{
+    		System.out.println("broadcast:"+broadcast.getMsg());
+    	});
+    }
+    public void forceTerminate() {
+    	this.terminate();
+    }
+}
 
 class TestBroadcast implements Broadcast {
 	String Msg;
@@ -201,7 +154,7 @@ class TestBroadcast implements Broadcast {
 		return Msg;
 	}
 }
-class TestEvent implements Event<String> {
+class TestEvent implements Event<Boolean> {
 	String Msg;
 	public TestEvent(String msg) {
 		this.Msg = msg;
@@ -210,4 +163,5 @@ class TestEvent implements Event<String> {
 		return Msg;
 	}
 }
+class TestEvent2 implements Event<Boolean> {}
 

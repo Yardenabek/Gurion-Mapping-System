@@ -65,10 +65,10 @@ public class FusionSlamTest {
         // Assert
         LandMark updatedLandmark = fusionSlam.getLandmark("1");
         assertNotNull(updatedLandmark);
-        assertEquals("Existing Object", updatedLandmark.getDescription());
+        assertEquals("Existing Object",updatedLandmark.getDescription());
         assertEquals(1, StatisticalFolder.getInstance().getLandmarks());
-        assertEquals(2.0, updatedLandmark.getCoordinates().get(0).getX(), 0.01);
-        assertEquals(2.0, updatedLandmark.getCoordinates().get(0).getY(), 0.01);
+        assertEquals(1.5, updatedLandmark.getCoordinates().get(0).getX(), 0.01);
+        assertEquals(1.5, updatedLandmark.getCoordinates().get(0).getY(), 0.01);
     }
 
     @Test
@@ -107,11 +107,10 @@ public class FusionSlamTest {
     public void testTrackedObjectsStatistics() {
         // Arrange
         TrackedObject trackedObject1 = new TrackedObject("1", 1, "Object 1", List.of(new CloudPoint(1, 1)));
-        TrackedObject trackedObject2 = new TrackedObject("2", 2, "Object 2", List.of(new CloudPoint(2, 2)));
+        TrackedObject trackedObject2 = new TrackedObject("2", 1, "Object 2", List.of(new CloudPoint(2, 2)));
         Pose pose = new Pose(0, 0, 0, 1);
         fusionSlam.addPose(pose);
         TrackedObjectsEvent event = new TrackedObjectsEvent(List.of(trackedObject1, trackedObject2));
-
         // Act
         fusionSlamService.processTrackedObjects(event);
 

@@ -44,6 +44,7 @@ public class FusionSlam {
     	return lastPose;
     }
     public boolean addLandMark(LandMark landmark) {
+    	StatisticalFolder.getInstance().incrementLandmarks();
     	return Landmarks.add(landmark);
     }
     public boolean addPose(Pose pose) {
