@@ -24,7 +24,7 @@ public abstract class MicroService implements Runnable {
 
     private boolean terminated = false;
     private final String name;
-    private final HashMap<Class<? extends Message>, Callback<?>> callbacks; // Callback for message handling
+    private final HashMap<Class<?>, Callback<?>> callbacks; // Callback for message handling
 
     /**
      * @param name the micro-service name (used mainly for debugging purposes -
@@ -160,31 +160,44 @@ public abstract class MicroService implements Runnable {
      */
     @Override
     public final void run() {
-        initialize();
         MessageBus messageBus = MessageBusImpl.getInstance();
-        messageBus.register(this);
-        while (!terminated) {
-            try {
-                Message message = messageBus.awaitMessage(this);                         
-                @SuppressWarnings("unchecked")
-                Callback<Message> callback = (Callback<Message>) callbacks.get(message.getClass());
+        try {
+            // Register the microservice with the MessageBus
+            messageBus.register(this);
+            initialize(); // Custom initialization for the microservice
 
-                if (callback != null) {
-                    callback.call(message); 
-                } 
-                else {
-                    System.err.println("No callback registered for message type: " + message.getClass().getName());
+            while (!terminated) {
+                try {
+                    // Block until a message is available
+                    Message message = messageBus.awaitMessage(this);
+
+                    // Retrieve the callback for the received message
+                    if (message instanceof Event) {
+                        @SuppressWarnings("unchecked")
+                        Callback<Event<?>> callback = (Callback<Event<?>>) callbacks.get(message.getClass());
+
+                        if (callback != null) {
+                            // Process the event and resolve its Future
+                            Event<?> event = (Event<?>) message;
+                            callback.call(event);         
+                        }
+                    } else if (message instanceof Broadcast) {
+                        @SuppressWarnings("unchecked")
+                        Callback<Broadcast> callback = (Callback<Broadcast>) callbacks.get(message.getClass());
+
+                        if (callback != null) {
+                            callback.call((Broadcast) message);
+                        }
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt(); // Restore interrupted status
+                    break; // Exit the loop
+                } catch (Exception e) {
+                    System.err.println("Error processing message: " + e.getMessage());
                 }
-            } 
-        	catch (InterruptedException e) {
-        		System.err.println("MicroService " + getName() + " interrupted: " + e.getMessage());
-        		Thread.currentThread().interrupt(); 
-        	} 
-        	catch (ClassCastException e) {
-        		System.err.println("Callback type mismatch for message: " + e.getMessage());
-        	}
+            }
+        } finally {
+            messageBus.unregister(this);
         }
-        messageBus.unregister(this);
     }
-
-}
+    }

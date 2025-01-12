@@ -58,9 +58,11 @@ public class MessageBusImpl implements MessageBus {
 	@Override
 	public <T> void complete(Event<T> e, T result) {
 		synchronized (lock) { 
-	        Future<T> future = (Future<T>) eventFutures.get(e); 
+			@SuppressWarnings("unchecked")
+	        Future<T> future = (Future<T>) eventFutures.get(e);
 	        if (future != null) {
-	            future.resolve(result);  
+	            future.resolve(result); // Resolve the Future
+	            eventFutures.remove(e); // Cleanup
 	        }
 	    }
 	}
@@ -83,32 +85,30 @@ public class MessageBusImpl implements MessageBus {
 
 	
 	@Override
-	public <T> Future<T> sendEvent(Event<T> e) {
-		 synchronized (lock) {
-	        // Get the list of subscribers for the given event type
+	public <T> Future<T> sendEvent( Event<T> e) {
+	    synchronized (lock) {
 	        List<MicroService> subscribers = eventSubscribers.get(e.getClass());
 	        if (subscribers == null || subscribers.isEmpty()) {
-	            return null; // No microservices subscribed to this event type
+	            return null; // No subscribers for this event type
 	        }
 
-	        // Create a new Future object for the event
 	        Future<T> future = new Future<>();
 	        eventFutures.put(e, future);
 
-	        // Retrieve the current Round Robin index for this event type
+	        // Round-robin logic for dispatching events
 	        int index = eventRoundRobinIndex.getOrDefault(e.getClass(), 0);
 	        MicroService selectedService = subscribers.get(index);
 
-	        // Update the Round Robin index for the next event of this type
+	        // Update round-robin index
 	        eventRoundRobinIndex.put((Class<? extends Event<?>>) e.getClass(), (index + 1) % subscribers.size());
 
-	        // Add the event to the selected microservice's queue
+	        // Add the event and its Future to the service's queue
 	        BlockingQueue<Message> queue = microServiceQueues.get(selectedService);
 	        if (queue != null) {
-	            queue.offer(e); // Add the event to the queue
+	            queue.offer(e);
 	        }
 
-	        return future; // Return the Future object to the sender
+	        return future;
 	    }
 	}
 
@@ -145,17 +145,18 @@ public class MessageBusImpl implements MessageBus {
 
 	@Override
 	public Message awaitMessage(MicroService m) throws InterruptedException {
-		synchronized (lock) {
-	        // Check if the microservice is registered
-	        if (!microServiceQueues.containsKey(m)) {
-	            throw new IllegalStateException("MicroService is not registered");
-	        }
+	    BlockingQueue<Message> queue = microServiceQueues.get(m);
 
-	        // Retrieve the message queue for the microservice
-	        BlockingQueue<Message> queue = microServiceQueues.get(m);
+	    if (queue == null) {
+	        throw new IllegalStateException("MicroService is not registered with the MessageBus");
+	    }
 
-	        // Always wait for the next message (blocking)
+	    try {
+	        // Wait indefinitely for a message to become available
 	        return queue.take();
+	    } catch (InterruptedException e) {
+	        Thread.currentThread().interrupt(); // Restore interrupted status
+	        throw new InterruptedException("Thread interrupted while awaiting message for: " + m.getName());
 	    }
 	}
 	
