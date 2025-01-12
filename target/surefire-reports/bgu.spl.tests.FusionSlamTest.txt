@@ -1,26 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: bgu.spl.tests.FusionSlamTest
 -------------------------------------------------------------------------------
-Tests run: 5, Failures: 1, Errors: 1, Skipped: 0, Time elapsed: 0.027 s <<< FAILURE! -- in bgu.spl.tests.FusionSlamTest
-bgu.spl.tests.FusionSlamTest.testUpdateExistingLandmark -- Time elapsed: 0.009 s <<< FAILURE!
-org.opentest4j.AssertionFailedError: expected: <1> but was: <0>
-	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)
-	at org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)
-	at org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:197)
-	at org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:150)
-	at org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:145)
-	at org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:527)
-	at bgu.spl.tests.FusionSlamTest.testUpdateExistingLandmark(FusionSlamTest.java:69)
-	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
-	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
-	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
-
-bgu.spl.tests.FusionSlamTest.testTrackedObjectsStatistics -- Time elapsed: 0.001 s <<< ERROR!
-java.lang.NullPointerException: Cannot invoke "bgu.spl.mics.application.objects.Pose.getX()" because "currentPose" is null
-	at bgu.spl.mics.application.objects.FusionSlam.transformToGlobalFrame(FusionSlam.java:70)
-	at bgu.spl.mics.application.services.FusionSlamService.processTrackedObjects(FusionSlamService.java:149)
-	at bgu.spl.tests.FusionSlamTest.testTrackedObjectsStatistics(FusionSlamTest.java:116)
-	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
-	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
-	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
-
+Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.019 s -- in bgu.spl.tests.FusionSlamTest
