@@ -1,6 +1,7 @@
 -------------------------------------------------------------------------------
 Test set: bgu.spl.tests.CameraTest
 -------------------------------------------------------------------------------
+<<<<<<< HEAD
 Tests run: 3, Failures: 2, Errors: 0, Skipped: 0, Time elapsed: 0.055 s <<< FAILURE! -- in bgu.spl.tests.CameraTest
 bgu.spl.tests.CameraTest.testProcessErrorTick -- Time elapsed: 0.011 s <<< FAILURE!
 java.lang.AssertionError: expected:<false> but was:<true>
@@ -73,4 +74,32 @@ org.junit.ComparisonFailure: expected:<[1]> but was:<[2]>
 	at org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
 	at org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
 	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
+=======
+Tests run: 3, Failures: 2, Errors: 0, Skipped: 0, Time elapsed: 0.157 s <<< FAILURE! -- in bgu.spl.tests.CameraTest
+bgu.spl.tests.CameraTest.testProcessErrorTick -- Time elapsed: 0.090 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: expected: <false> but was: <true>
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)
+	at org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)
+	at org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:197)
+	at org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:182)
+	at org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:177)
+	at org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1141)
+	at bgu.spl.tests.CameraTest.testProcessErrorTick(CameraTest.java:63)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+
+bgu.spl.tests.CameraTest.testProcessValidTick -- Time elapsed: 0.004 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: expected: <1> but was: <2>
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)
+	at org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)
+	at org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:197)
+	at org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:182)
+	at org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:177)
+	at org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1141)
+	at bgu.spl.tests.CameraTest.testProcessValidTick(CameraTest.java:52)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+>>>>>>> branch 'main' of https://github.com/Yardenabek/Gurion-Mapping-System.git
 

@@ -1,25 +1,25 @@
 package bgu.spl.tests;
 
 import bgu.spl.mics.application.messages.TickBroadcast;
+
 import bgu.spl.mics.application.objects.Camera;
 import bgu.spl.mics.application.objects.DetectedObject;
 import bgu.spl.mics.application.objects.StampedDetectedObjects;
 import bgu.spl.mics.application.services.CameraService;
-import org.junit.Before;
-import org.junit.Test;
 
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.*;
+import static org.junit.jupiter.api.Assertions.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
-import static org.junit.Assert.assertEquals;
 
 public class CameraTest {
 
     private Camera camera;
     private CameraService cameraService;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         // Create a list of detected objects for testing
         List<StampedDetectedObjects> detectedObjectsList = new ArrayList<>();

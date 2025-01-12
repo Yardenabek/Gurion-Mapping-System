@@ -1,13 +1,9 @@
 package bgu.spl.tests;
 
 import bgu.spl.mics.*;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 
-import java.util.concurrent.TimeUnit;
-
-import static org.junit.Assert.*;
+import org.junit.jupiter.api.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class MessageBusTest {
 
@@ -15,7 +11,7 @@ public class MessageBusTest {
     private MicroService serviceA;
     private MicroService serviceB;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         // Reset the Singleton instance of MessageBusImpl
         MessageBusImpl.reset();
@@ -24,12 +20,26 @@ public class MessageBusTest {
         // Initialize two MicroServices
         serviceA = new MicroService("ServiceA") {
             @Override
-            protected void initialize() {}
+            protected void initialize() {
+            	subscribeEvent(TestEvent.class,event ->{
+            		System.out.println("event:"+event.getMsg());
+            	});
+            	subscribeBroadcast(TestBroadcast.class,broadcast ->{
+            		System.out.println("broadcast:"+broadcast.getMsg());
+            	});
+            }
         };
 
         serviceB = new MicroService("ServiceB") {
             @Override
-            protected void initialize() {}
+            protected void initialize() {
+            	subscribeEvent(TestEvent.class,event ->{
+            		System.out.println("event:"+event.getMsg());
+            	});
+            	subscribeBroadcast(TestBroadcast.class,broadcast ->{
+            		System.out.println("broadcast:"+broadcast.getMsg());
+            	});
+            }
         };
 
         // Register the MicroServices
@@ -37,7 +47,7 @@ public class MessageBusTest {
         messageBus.register(serviceB);
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         // Reset the Singleton instance of MessageBusImpl after each test
         MessageBusImpl.reset();
@@ -47,7 +57,12 @@ public class MessageBusTest {
     public void testRegister() {
         MicroService serviceC = new MicroService("ServiceC") {
             @Override
-            protected void initialize() {}
+            protected void initialize() {subscribeEvent(TestEvent.class,event ->{
+        		System.out.println("event:"+event.getMsg());
+        	});
+        	subscribeBroadcast(TestBroadcast.class,broadcast ->{
+        		System.out.println("broadcast:"+broadcast.getMsg());
+        	});}
         };
 
         // Register a new service
@@ -55,7 +70,7 @@ public class MessageBusTest {
 
         // Ensure the service can receive messages
         messageBus.subscribeBroadcast(TestBroadcast.class, serviceC);
-        messageBus.sendBroadcast(new TestBroadcast());
+        messageBus.sendBroadcast(new TestBroadcast("test register"));
 
         try {
             assertEquals(TestBroadcast.class, messageBus.awaitMessage(serviceC).getClass());
@@ -76,10 +91,9 @@ public class MessageBusTest {
     @Test
     public void testSubscribeEvent() {
         // Test valid event subscription and message receipt
-        class TestEvent implements Event<String> {}
         messageBus.subscribeEvent(TestEvent.class, serviceA);
 
-        Event<String> event = new TestEvent();
+        Event<String> event = new TestEvent("test subscribe event");
         Future<String> future = messageBus.sendEvent(event);
 
         assertNotNull(future); // Verify that a future is returned
@@ -91,7 +105,7 @@ public class MessageBusTest {
         }
 
         // Test sending an event without subscribers
-        Event<String> event2 = new TestEvent();
+        Event<String> event2 = new TestEvent("Test sending an event without subscribers");
         Future<String> future2 = messageBus.sendEvent(event2);
         assertNull(future2); // No one subscribed to handle the event
     }
@@ -99,10 +113,9 @@ public class MessageBusTest {
     @Test
     public void testSubscribeBroadcast() {
         // Test valid broadcast subscription
-        class TestBroadcast implements Broadcast {}
         messageBus.subscribeBroadcast(TestBroadcast.class, serviceB);
 
-        Broadcast broadcast = new TestBroadcast();
+        Broadcast broadcast = new TestBroadcast("Test valid broadcast subscription");
         messageBus.sendBroadcast(broadcast);
 
         try {
@@ -112,8 +125,7 @@ public class MessageBusTest {
         }
 
         // Test sending a broadcast without subscribers
-        class TestBroadcast2 implements Broadcast {}
-        Broadcast broadcast2 = new TestBroadcast2();
+        Broadcast broadcast2 = new TestBroadcast("Test sending a broadcast without subscribers");
         messageBus.sendBroadcast(broadcast2);
 
         // ServiceA and ServiceB should not receive this broadcast
@@ -136,12 +148,11 @@ public class MessageBusTest {
     @Test
     public void testSendEventRoundRobin() {
         // Test round-robin distribution of events
-        class TestEvent implements Event<String> {}
         messageBus.subscribeEvent(TestEvent.class, serviceA);
         messageBus.subscribeEvent(TestEvent.class, serviceB);
 
-        Event<String> event1 = new TestEvent();
-        Event<String> event2 = new TestEvent();
+        Event<String> event1 = new TestEvent("Test round-robin distribution of events 1");
+        Event<String> event2 = new TestEvent("Test round-robin distribution of events 2");
 
         messageBus.sendEvent(event1);
         messageBus.sendEvent(event2);
@@ -157,10 +168,9 @@ public class MessageBusTest {
     @Test
     public void testCompleteEvent() {
         // Test completing an event and resolving its future
-        class TestEvent implements Event<String> {}
         messageBus.subscribeEvent(TestEvent.class, serviceA);
 
-        Event<String> event = new TestEvent();
+        Event<String> event = new TestEvent("Test completing an event and resolving its future");
         Future<String> future = messageBus.sendEvent(event);
 
         // Complete the event
@@ -182,4 +192,22 @@ public class MessageBusTest {
     }
 }
 
-class TestBroadcast implements Broadcast {}
+class TestBroadcast implements Broadcast {
+	String Msg;
+	public TestBroadcast(String msg) {
+		this.Msg = msg;
+	}
+	public String getMsg() {
+		return Msg;
+	}
+}
+class TestEvent implements Event<String> {
+	String Msg;
+	public TestEvent(String msg) {
+		this.Msg = msg;
+	}
+	public String getMsg() {
+		return Msg;
+	}
+}
+

@@ -3,20 +3,18 @@ package bgu.spl.tests;
 import bgu.spl.mics.application.objects.*;
 import bgu.spl.mics.application.services.FusionSlamService;
 import bgu.spl.mics.application.messages.TrackedObjectsEvent;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 
+import org.junit.jupiter.api.*;
+import static org.junit.jupiter.api.Assertions.*;
 import java.util.List;
 
-import static org.junit.Assert.*;
 
 public class FusionSlamTest {
 
     private FusionSlam fusionSlam;
     private FusionSlamService fusionSlamService;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         // Initialize FusionSlam and FusionSlamService before each test
         fusionSlam = FusionSlam.getInstance();
@@ -24,7 +22,7 @@ public class FusionSlamTest {
         StatisticalFolder.getInstance().reset(); // Reset statistics if necessary
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         // Clean up after each test
         fusionSlam.getLandMarks().clear();
@@ -46,7 +44,7 @@ public class FusionSlamTest {
         
         // Assert
         LandMark landmark = fusionSlam.getLandmark("1");
-        assertNotNull("Landmark should be created for new tracked object.", landmark);
+        assertNotNull(landmark);
         assertEquals("Object 1", landmark.getDescription());
         assertEquals(1, StatisticalFolder.getInstance().getLandmarks());
     }
@@ -66,7 +64,7 @@ public class FusionSlamTest {
 
         // Assert
         LandMark updatedLandmark = fusionSlam.getLandmark("1");
-        assertNotNull("Landmark should still exist after update.", updatedLandmark);
+        assertNotNull(updatedLandmark);
         assertEquals("Existing Object", updatedLandmark.getDescription());
         assertEquals(1, StatisticalFolder.getInstance().getLandmarks());
         assertEquals(2.0, updatedLandmark.getCoordinates().get(0).getX(), 0.01);
@@ -86,7 +84,7 @@ public class FusionSlamTest {
 
         // Assert
         LandMark landmark = fusionSlam.getLandmark("1");
-        assertNotNull("Landmark should be created.", landmark);
+        assertNotNull(landmark);
         // Verify transformed coordinates
         assertEquals(4.0, landmark.getCoordinates().get(0).getX(), 0.01);
         assertEquals(6.0, landmark.getCoordinates().get(0).getY(), 0.01);
@@ -101,7 +99,7 @@ public class FusionSlamTest {
         fusionSlamService.processTrackedObjects(event);
 
         // Assert
-        assertTrue("No landmarks should be added for an empty tracked objects list.", fusionSlam.getLandMarks().isEmpty());
+        assertTrue(fusionSlam.getLandMarks().isEmpty());
         assertEquals(0, StatisticalFolder.getInstance().getLandmarks());
     }
 
