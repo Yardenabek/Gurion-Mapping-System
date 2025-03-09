@@ -90,7 +90,7 @@ The tests validate:
 ## Authors
 - **Course:** SPL 225 - Concurrent Programming in Java
 - **Instructor:** BGU Computer Science Department
-- **Teaching Assistants:** Lotem Sakira, Ahmed Massalha
+- **Students** Yarden Abekasis, Reem Schur
 
 ## License
 This project is for educational purposes and is part of the SPL 225 course at BGU.
