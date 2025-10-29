@@ -1,7 +1,7 @@
 # GurionRock Pro Max Ultra Over 9000 - Perception and Mapping System
 
 ## Overview
-This project is an implementation of a multi-threaded microservice framework to simulate the perception and mapping system of a vacuum robot, *GurionRock Pro Max Ultra Over 9000*. The system integrates sensor data from cameras and LiDAR to build an environmental map using Fusion-SLAM.
+This project is an implementation of a multi-threaded microservice framework to simulate the perception and mapping system of a vacuum robot,*GurionRock Pro Max Ultra Over 9000*. The system integrates sensor data from cameras and LiDAR to build an environmental map using Fusion-SLAM.
 
 ## Features
 - **Java Concurrency and Synchronization**: Implements Java's concurrency principles, including multi-threading and synchronization.
@@ -54,6 +54,7 @@ The `MessageBusImpl` handles message passing between microservices:
 ### Prerequisites
 - Java 8+
 - Maven
+.
 
 ### Running the Simulation
 1. **Compile the project:**
